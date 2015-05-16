@@ -1,5 +1,6 @@
 require "bootstrap_helper/helper"
 require "bootstrap_helper/breadcrumb"
+
 module BootstrapHelper
   module Rails
     class Engine < ::Rails::Engine
@@ -9,7 +10,7 @@ module BootstrapHelper
       end
 
       config.to_prepare do
-        ApplicationController.send :include, BootstrapHelper::Breadcrumb
+        ActionController::Base.send :include, BootstrapHelper::Breadcrumb
       end
 
     end

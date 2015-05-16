@@ -19,56 +19,80 @@ module BootstrapHelper
       flash_messages.join("\n").html_safe
     end
 
+    def ibutton(text, path, options = {})
+
+      color_btn_class = ["btn-primary", "btn-danger", "btn-info" , "btn-warning", "btn-success", "btn-inverse"]
+
+      class_name = (options[:class].present?)? options[:class] : ""
+      icon_class = ""
+
+      if options[:iclass].present?
+        icon_class = options[:iclass]
+        icon_class << " icon-white" if !(color_btn_class & class_name.split(" ")).empty?
+        options.delete(:iclass)
+      end
+      link_to path, options do
+        content_tag(:i, "", :class => icon_class) + content_tag(:span, " #{text}" )
+      end
+    end
+
     def render_table(rows, renderrers, table_options = {})
       table_options = {
         :has_header => true,
         :has_row_info => false,
         :caption => "",
         :id => nil,
-        :class_name => "auto"
-      }.merge(table_options)
+        :class_name => "auto",
+        :blank_message => "No results available."
+        }.merge(table_options)
 
-      table_tag_options = table_options[:id] ? { :id => table_options[:id], :class => table_options[:class_name] } : { :class => table_options[:class_name] }
+        table_tag_options = table_options[:id] ? { :id => table_options[:id], :class => table_options[:class_name] } : { :class => table_options[:class_name] }
 
-      table = TagNode.new('table', table_tag_options)
-      
-      if !table_options[:caption].blank?
-        table << caption = TagNode.new(:caption)
-        caption << table_options[:caption]
-      end
-      
-      if table_options[:has_header] == true
-        table << thead = TagNode.new(:thead)
-        thead << tr = TagNode.new(:tr, :class => 'odd')
+        table = TagNode.new('table', table_tag_options)
 
-        renderrers.each do |renderrer|
-          tr << th = TagNode.new(:th)
-          th << renderrer[0]
+        if !table_options[:caption].blank?
+          table << caption = TagNode.new(:caption)
+          caption << table_options[:caption]
         end
-      end
 
-      table << tbody = TagNode.new('tbody')
-      row_info = {}
-      row_info[:total] = rows.length
-      rows.each_with_index do |row,i|
-        row_info[:current] = i
-        tbody << tr = TagNode.new('tr', :class => cycle("","odd") )
-        renderrers.each do |renderrer|
-          tr << td = TagNode.new('td')
+        if table_options[:has_header] == true
+          table << thead = TagNode.new(:thead)
+          thead << tr = TagNode.new(:tr, :class => 'odd')
 
-          if renderrer[1].class == Proc
-            if table_options[:has_row_info] == true
-              td << renderrer[1].call(row, row_info)
-            else
-              td << renderrer[1].call(row)
-            end
-          else
-            td << renderrer[1]
+          renderrers.each do |renderrer|
+            tr << th = TagNode.new(:th)
+            th << renderrer[0]
           end
         end
-      end
 
-      return table.to_s
+        table << tbody = TagNode.new('tbody')
+        row_info = {}
+        row_info[:total] = rows.length
+        rows.each_with_index do |row,i|
+          row_info[:current] = i
+          tbody << tr = TagNode.new('tr', :class => cycle("","odd") )
+          renderrers.each do |renderrer|
+            tr << td = TagNode.new('td')
+
+            if renderrer[1].class == Proc
+              if table_options[:has_row_info] == true
+                td << renderrer[1].call(row, row_info)
+              else
+                td << renderrer[1].call(row)
+              end
+            else
+              td << renderrer[1]
+            end
+          end
+        end
+
+        if rows.length <= 0 && table_options[:blank_message] != false
+          tbody << tr = TagNode.new('tr', :class => "no-record" )
+          tr << td = TagNode.new('td', :colspan => renderrers.length)
+          td << table_options[:blank_message]
+        end
+
+        return table.to_s
     end
 
     # .current will be added to current action, but if you want to add .current to another link, you can set @current = ['/other_link']
@@ -80,10 +104,10 @@ module BootstrapHelper
       end
 
       yield(list) if block_given?
-      
+
       list_type ||= "ul"
-      
-      if options[:type] 
+
+      if options[:type]
         if ["ul", "dl", "ol"].include?(options[:type])
           list_type = options[:type]
         end
@@ -151,5 +175,4 @@ module BootstrapHelper
       end
     end
   end
-
 end
